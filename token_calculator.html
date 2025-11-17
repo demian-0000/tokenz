@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groq Token Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            font-weight: 300;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-family: 'SF Pro Text', -apple-system, sans-serif;
+        }
+        input {
+            width: 100%;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+        }
+        select {
+            width: 100%;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056cc;
+        }
+        #result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+            font-family: 'SF Pro Text', -apple-system, sans-serif;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+        .red .progress {
+            background: red;
+        }
+        .orange .progress {
+            background: orange;
+        }
+        #jpgTokens, #promptTokens {
+            font-family: 'SF Pro Text', -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-size: 29px; font-weight: 500; font-family: 'SF Pro Text', -apple-system, sans-serif;">TOKENZ</h1>
+        <label for="fileSize">Original JPG file size (KB):</label>
+        <input type="number" id="fileSize" placeholder="e.g., 100" oninput="updateTokens()">
+        <div id="jpgTokens" style="margin-bottom: 15px; font-size: 14px; color: #666;">JPG Tokens: 0</div>
+
+        <label for="promptChars">Prompt length (characters):</label>
+        <input type="number" id="promptChars" placeholder="e.g., 100" oninput="updateTokens()">
+        <div id="promptTokens" style="margin-bottom: 15px; font-size: 14px; color: #666;">Prompt Tokens: 0</div>
+
+        <label for="model">Model:</label>
+        <select id="model">
+            <option value="scout">meta-llama/llama-4-scout-17b-16e-instruct</option>
+            <option value="maverick">meta-llama/llama-4-maverick-17b-128e-instruct</option>
+        </select>
+
+        <button onclick="calculate()">Calculate Tokens</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function updateTokens() {
+            const jpgSizeKB = parseInt(document.getElementById('fileSize').value) || 0;
+            const promptChars = parseInt(document.getElementById('promptChars').value) || 0;
+            const base64SizeKB = jpgSizeKB * (4 / 3);
+            const jpgTokens = Math.ceil((base64SizeKB * 1024) / 4);
+            const promptTokens = Math.ceil(promptChars / 4);
+            document.getElementById('jpgTokens').innerText = `JPG Tokens: ${jpgTokens}`;
+            document.getElementById('promptTokens').innerText = `Prompt Tokens: ${promptTokens}`;
+        }
+
+        function calculate() {
+            const jpgTokens = parseInt(document.getElementById('jpgTokens').innerText.split(': ')[1]) || 0;
+            const promptTokens = parseInt(document.getElementById('promptTokens').innerText.split(': ')[1]) || 0;
+            const totalTokens = jpgTokens + promptTokens;
+            const model = document.getElementById('model').value;
+            let tpm, tpd;
+            if (model === 'scout') {
+                tpm = 30000;
+                tpd = 300000;
+            } else {
+                tpm = 6000;
+                tpd = 300000;
+            }
+            const tpmPercent = Math.min((totalTokens / tpm) * 100, 100);
+            const tpdPercent = Math.min((totalTokens / tpd) * 100, 100);
+            let resultText = `<span style="font-size: 24px; font-weight: 500; font-family: 'SF Pro Text', -apple-system, sans-serif;">${totalTokens}</span><br><br>`;
+            resultText += `Tokens per Minute: ${totalTokens} / ${tpm}<br>`;
+            resultText += `<div class="progress-bar red"><div class="progress" style="width: ${tpmPercent}%"></div></div>`;
+            resultText += `Tokens per Day: ${totalTokens} / ${tpd}<br>`;
+            resultText += `<div class="progress-bar orange"><div class="progress" style="width: ${tpdPercent}%"></div></div>`;
+            if (totalTokens > tpm) {
+                resultText += '<span style="color: red;">Exceeds Tokens per Minute limit!</span>';
+            } else {
+                resultText += '<span style="color: green;">Within Tokens per Minute limit</span>';
+            }
+            document.getElementById('result').innerHTML = resultText;
+        }
+
+        window.onload = function() {
+            updateTokens();
+            calculate();
+        };
+    </script>
+</body>
+</html>
