@@ -51,6 +51,7 @@
             font-size: 16px;
             box-sizing: border-box;
             margin-bottom: 15px;
+            background-color: #C4C4C4;
         }
         button {
             width: 100%;
@@ -73,9 +74,9 @@
         }
         .progress-bar {
             width: 100%;
-            height: 20px;
+            height: 10px;
             background: #e0e0e0;
-            border-radius: 10px;
+            border-radius: 5px;
             overflow: hidden;
             margin: 10px 0;
         }
@@ -90,6 +91,9 @@
         .orange .progress {
             background: orange;
         }
+        .blue .progress {
+            background: blue;
+        }
         #jpgTokens, #promptTokens {
             font-family: 'SF Pro Text', -apple-system, sans-serif;
         }
@@ -98,48 +102,69 @@
 <body>
     <div class="container">
         <h1 style="font-size: 29px; font-weight: 500; font-family: 'SF Pro Text', -apple-system, sans-serif;">TOKENZ</h1>
-        <label for="fileSize">Original JPG file size (KB):</label>
-        <input type="number" id="fileSize" placeholder="e.g., 100" oninput="updateTokens()">
-        <div id="jpgTokens" style="margin-bottom: 15px; font-size: 14px; color: #666;">JPG Tokens: 0</div>
+        <label for="imageWidth">Image Width (pixels):</label>
+        <input type="number" id="imageWidth" placeholder="e.g., 410" oninput="updateTokens()">
+        
+        <label for="imageHeight">Image Height (pixels):</label>
+        <input type="number" id="imageHeight" placeholder="e.g., 306" oninput="updateTokens()">
+
+        <label for="compression">Compression (%):</label>
+        <input type="range" id="compression" min="0" max="100" value="80" oninput="updateTokens()">
+        <div id="compressionValue" style="margin-bottom: 15px; font-size: 14px; color: #666;">Compression: 80%</div>
+
+        <div id="jpgTokens" style="margin-bottom: 15px; font-size: 14px; color: #666;">Image Tokens: 0</div>
+        <div id="fileSize" style="margin-bottom: 15px; font-size: 14px; color: #666;">Estimated File Size: 0 KB</div>
 
         <label for="promptChars">Prompt length (characters):</label>
         <input type="number" id="promptChars" placeholder="e.g., 100" oninput="updateTokens()">
         <div id="promptTokens" style="margin-bottom: 15px; font-size: 14px; color: #666;">Prompt Tokens: 0</div>
 
         <label for="model">Model:</label>
-        <select id="model">
-            <option value="scout">meta-llama/llama-4-scout-17b-16e-instruct</option>
-            <option value="maverick">meta-llama/llama-4-maverick-17b-128e-instruct</option>
+        <select id="model" onchange="updateTokens()">
+            <option value="scout">llama-4-scout-17b-16e-instruct</option>
+            <option value="maverick">llama-4-maverick-17b-128e-instruct</option>
         </select>
-
-        <button onclick="calculate()">Calculate Tokens</button>
         
         <div id="result"></div>
     </div>
 
     <script>
         function updateTokens() {
-            const jpgSizeKB = parseInt(document.getElementById('fileSize').value) || 0;
+            const width = parseInt(document.getElementById('imageWidth').value) || 0;
+            const height = parseInt(document.getElementById('imageHeight').value) || 0;
+            const compression = parseInt(document.getElementById('compression').value) || 0;
             const promptChars = parseInt(document.getElementById('promptChars').value) || 0;
-            const base64SizeKB = jpgSizeKB * (4 / 3);
-            const jpgTokens = Math.ceil((base64SizeKB * 1024) / 4);
+
+            // Update compression display
+            document.getElementById('compressionValue').innerText = `Compression: ${compression}%`;
+
+            // Estimated file size based on quality (higher % = higher quality = lower compression ratio)
+            const quality = compression;
+            const compressionRatio = 1 + (15 * (100 - quality) / 100);
+            const fileSizeKB = Math.ceil((width * height * 3) / (compressionRatio * 1024));
+
+            // Image tokens based on compressed file size (approximated factor)
+            const imageTokens = Math.ceil(fileSizeKB * 30);
             const promptTokens = Math.ceil(promptChars / 4);
-            document.getElementById('jpgTokens').innerText = `JPG Tokens: ${jpgTokens}`;
+
+            document.getElementById('jpgTokens').innerText = `Image Tokens: ${imageTokens}`;
+            document.getElementById('fileSize').innerText = `Estimated File Size: ${fileSizeKB} KB`;
             document.getElementById('promptTokens').innerText = `Prompt Tokens: ${promptTokens}`;
+            calculate();
         }
 
         function calculate() {
-            const jpgTokens = parseInt(document.getElementById('jpgTokens').innerText.split(': ')[1]) || 0;
+            const imageTokens = parseInt(document.getElementById('jpgTokens').innerText.split(': ')[1]) || 0;
             const promptTokens = parseInt(document.getElementById('promptTokens').innerText.split(': ')[1]) || 0;
-            const totalTokens = jpgTokens + promptTokens;
+            const totalTokens = imageTokens + promptTokens;
             const model = document.getElementById('model').value;
             let tpm, tpd;
             if (model === 'scout') {
                 tpm = 30000;
-                tpd = 300000;
+                tpd = 500000;
             } else {
                 tpm = 6000;
-                tpd = 300000;
+                tpd = 500000;
             }
             const tpmPercent = Math.min((totalTokens / tpm) * 100, 100);
             const tpdPercent = Math.min((totalTokens / tpd) * 100, 100);
@@ -147,18 +172,18 @@
             resultText += `Tokens per Minute: ${totalTokens} / ${tpm}<br>`;
             resultText += `<div class="progress-bar red"><div class="progress" style="width: ${tpmPercent}%"></div></div>`;
             resultText += `Tokens per Day: ${totalTokens} / ${tpd}<br>`;
-            resultText += `<div class="progress-bar orange"><div class="progress" style="width: ${tpdPercent}%"></div></div>`;
+            resultText += `<div class="progress-bar blue"><div class="progress" style="width: ${tpdPercent}%"></div></div>`;
+            resultText += '<br><br>';
             if (totalTokens > tpm) {
                 resultText += '<span style="color: red;">Exceeds Tokens per Minute limit!</span>';
             } else {
-                resultText += '<span style="color: green;">Within Tokens per Minute limit</span>';
+                resultText += '<span style="color: blue;">Within Tokens per Minute limit</span>';
             }
             document.getElementById('result').innerHTML = resultText;
         }
 
         window.onload = function() {
             updateTokens();
-            calculate();
         };
     </script>
 </body>
