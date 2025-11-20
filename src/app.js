@@ -309,7 +309,7 @@ promptsList.addEventListener('click', function(e) {
         promptName.value = prompt.name;
         promptText.value = prompt.prompt;
         editingIndex = parseInt(index);
-        addPromptBtn.textContent = 'Update Prompt';
+        addPromptBtn.textContent = 'Update';
     } else if (e.target.classList.contains('prompt-item-btn-delete')) {
         if (confirm('Delete this prompt?')) {
             agentPrompts.splice(index, 1);
