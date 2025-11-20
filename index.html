@@ -732,7 +732,7 @@
         // === Groq Models API integration ===
         let apiKey = localStorage.getItem('groqApiKey') || '';
         let models = [];
-        let currentModel = '';
+        let currentModel = localStorage.getItem('lastUsedModel') || '';
         
         // Allowed models list (in display order)
         const ALLOWED_MODELS = [
@@ -827,7 +827,10 @@
                     models = ALLOWED_MODELS;
                 }
                 
-                currentModel = models[0];
+                // Use saved model if valid, otherwise use first model
+                if (!currentModel || !models.includes(currentModel)) {
+                    currentModel = models[0];
+                }
                 updateModelTag();
                 statusEl.textContent = `${models.length} models available`;
                 statusEl.className = 'api-status connected';
@@ -921,6 +924,7 @@
                 }
                 
                 currentModel = newModel;
+                localStorage.setItem('lastUsedModel', currentModel);
                 updateModelTag();
                 dropdown.classList.remove('show');
             }
@@ -928,7 +932,7 @@
 
         // Prompts management
         let agentPrompts = JSON.parse(localStorage.getItem('agentPrompts') || '[]');
-        let currentAgent = null;
+        let currentAgent = localStorage.getItem('lastUsedAgent') || null;
         let currentAgentPrompt = null;
 
         function savePrompts() {
@@ -1067,6 +1071,7 @@
                 }
                 
                 currentAgent = agentName;
+                localStorage.setItem('lastUsedAgent', currentAgent);
                 const agentData = agentPrompts.find(p => p.name === agentName);
                 currentAgentPrompt = agentData ? agentData.prompt : null;
                 agentsDropdown.classList.remove('show');
@@ -1251,6 +1256,70 @@
         // Remove image
         removeImageBtn.addEventListener('click', clearImage);
 
+        // Currency rates cache
+        let currencyRates = null;
+        let lastRatesFetch = null;
+        const RATES_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+        // Fetch comprehensive currency rates
+        async function fetchAllCurrencyRates() {
+            try {
+                // Fetch rates for major base currencies
+                const baseCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF'];
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                
+                if (!response.ok) throw new Error('Failed to fetch rates');
+                const data = await response.json();
+                
+                currencyRates = {
+                    base: 'USD',
+                    rates: data.rates,
+                    lastUpdate: new Date().toISOString(),
+                    timestamp: Date.now()
+                };
+                
+                lastRatesFetch = Date.now();
+                console.log('Currency rates updated:', Object.keys(data.rates).length, 'currencies');
+                return true;
+            } catch (error) {
+                console.error('Failed to fetch currency rates:', error);
+                return false;
+            }
+        }
+
+        // Get formatted rates string for LLM
+        function getFormattedRatesForLLM() {
+            if (!currencyRates) return '';
+            
+            const majorCurrencies = ['EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'MXN', 'BRL'];
+            let ratesText = `\n\n=== LIVE EXCHANGE RATES (Base: USD) ===\n`;
+            ratesText += `Last updated: ${new Date(currencyRates.timestamp).toLocaleString()}\n\n`;
+            
+            majorCurrencies.forEach(currency => {
+                if (currencyRates.rates[currency]) {
+                    ratesText += `1 USD = ${currencyRates.rates[currency].toFixed(4)} ${currency}\n`;
+                }
+            });
+            
+            ratesText += `\nAll ${Object.keys(currencyRates.rates).length} currencies available. Use these live rates for accurate conversions.\n`;
+            ratesText += `===================================\n`;
+            
+            return ratesText;
+        }
+
+        // Check if rates need refresh
+        async function ensureFreshRates() {
+            if (!currencyRates || !lastRatesFetch || (Date.now() - lastRatesFetch > RATES_CACHE_DURATION)) {
+                await fetchAllCurrencyRates();
+            }
+        }
+
+        // Initialize rates on page load
+        fetchAllCurrencyRates();
+        
+        // Refresh rates every 30 minutes
+        setInterval(fetchAllCurrencyRates, RATES_CACHE_DURATION);
+
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message && !currentImage) return;
@@ -1267,6 +1336,9 @@
             }
 
 
+
+            // Ensure we have fresh currency rates
+            await ensureFreshRates();
 
             // Build message content
             let userMessage;
@@ -1308,10 +1380,15 @@
             
             // Always add system prompt at the start if agent is selected
             if (currentAgentPrompt) {
-                // Ensure system prompt is a string
+                // Add live currency rates to system prompt
+                let systemPrompt = String(currentAgentPrompt);
+                if (currencyRates) {
+                    systemPrompt += getFormattedRatesForLLM();
+                }
+                
                 messagesToSend.push({
                     role: 'system',
-                    content: String(currentAgentPrompt)
+                    content: systemPrompt
                 });
             }
             
@@ -1409,6 +1486,22 @@
         } else {
             document.getElementById('modelTag').textContent = 'No API Key';
             document.getElementById('apiStatus').textContent = 'Click user icon to set API key';
+        }
+        
+        // Restore last used agent on page load
+        if (currentAgent) {
+            const agentData = agentPrompts.find(p => p.name === currentAgent);
+            if (agentData) {
+                currentAgentPrompt = agentData.prompt;
+                const agentsSelectorSpan = document.querySelector('#agentsSelector span');
+                if (agentsSelectorSpan) {
+                    agentsSelectorSpan.textContent = currentAgent;
+                }
+            } else {
+                // Agent was deleted, clear saved preference
+                currentAgent = null;
+                localStorage.removeItem('lastUsedAgent');
+            }
         }
     </script></body>
 </html>
