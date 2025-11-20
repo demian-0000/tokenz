@@ -857,9 +857,12 @@ messageInput.oninput = function() {
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
 };
 
-// Enter key no longer submits - only the send button does
+// Enter sends message, Shift+Enter creates new line
 messageInput.onkeydown = function(event) {
-    // Allow Enter key for new lines (no special handling needed)
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
 };
 
 // Initialize on load
