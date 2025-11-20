@@ -490,7 +490,7 @@ h1 {
 
 .modal-btn {
     flex: 1;
-    padding: 12px 24px;
+    padding: 6px 24px;
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -498,6 +498,7 @@ h1 {
     cursor: pointer;
     transition: opacity 0.2s;
     font-family: inherit;
+    height: 32px;
 }
 
 .modal-btn:hover {
@@ -512,6 +513,11 @@ h1 {
 .modal-btn-save {
     background: #007aff;
     color: #ffffff;
+}
+
+.modal-btn-secondary {
+    background: #e0e0e0;
+    color: #333;
 }
 
 .prompts-modal-content {

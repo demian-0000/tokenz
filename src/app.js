@@ -273,7 +273,7 @@ function clearPromptForm() {
     promptName.value = '';
     promptText.value = '';
     editingIndex = null;
-    addPromptBtn.textContent = 'Add Prompt';
+    addPromptBtn.textContent = 'Add';
 }
 
 addPromptBtn.onclick = function() {
@@ -289,7 +289,7 @@ addPromptBtn.onclick = function() {
         // Update existing prompt
         agentPrompts[editingIndex] = { name, prompt };
         editingIndex = null;
-        addPromptBtn.textContent = 'Add Prompt';
+        addPromptBtn.textContent = 'Add';
     } else {
         // Add new prompt
         agentPrompts.push({ name, prompt });
@@ -318,6 +318,65 @@ promptsList.addEventListener('click', function(e) {
         }
     }
 });
+
+// Save prompts to JSON file handler
+const savePromptsBtn = document.getElementById('savePromptsBtn');
+if (savePromptsBtn) {
+    savePromptsBtn.onclick = function() {
+        if (agentPrompts.length === 0) {
+            alert('No prompts to save');
+            return;
+        }
+
+        try {
+            PromptSaver.saveToFile(agentPrompts);
+            alert('Prompts saved successfully');
+        } catch (error) {
+            alert(`Failed to save prompts: ${error.message}`);
+        }
+    };
+}
+
+// Load prompts from JSON file handler
+const loadPromptsBtn = document.getElementById('loadPromptsBtn');
+if (loadPromptsBtn) {
+    loadPromptsBtn.onclick = async function() {
+        try {
+            const loadedPrompts = await PromptSaver.loadFromFile();
+            
+            // Check for conflicts
+            const conflicts = loadedPrompts.filter(loaded => 
+                agentPrompts.some(existing => existing.name === loaded.name)
+            );
+
+            let strategy = 'keep';
+            if (conflicts.length > 0) {
+                const choice = prompt(
+                    `${conflicts.length} prompt(s) have conflicting names.\n` +
+                    `Choose strategy:\n` +
+                    `- "keep" to keep existing prompts\n` +
+                    `- "replace" to replace with loaded prompts\n` +
+                    `- "rename" to rename loaded prompts`,
+                    'keep'
+                );
+                
+                if (!choice || !['keep', 'replace', 'rename'].includes(choice)) {
+                    alert('Invalid choice. Operation cancelled.');
+                    return;
+                }
+                strategy = choice;
+            }
+
+            // Merge prompts
+            agentPrompts = PromptSaver.mergePrompts(agentPrompts, loadedPrompts, strategy);
+            savePrompts();
+            renderPromptsList();
+            alert('Prompts loaded successfully');
+        } catch (error) {
+            alert(`Failed to load prompts: ${error.message}`);
+        }
+    };
+}
 
 // Agents dropdown logic
 const agentsSelector = document.getElementById('agentsSelector');

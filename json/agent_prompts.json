@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "exportedAt": "2025-11-20T14:25:45.066Z",
+  "promptCount": 2,
+  "prompts": [
+    {
+      "name": "super duper",
+      "prompt": "CRITICAL INSTRUCTION: Your response MUST be 100 words or less. This is a hard limit.\n\nFormat:\n- Single paragraph\n- Direct answer only\n- No unnecessary details\n- Professional tone\n\nAfter writing your response, count the words. If over 100, rewrite shorter. End your response with: [Words: X]"
+    },
+    {
+      "name": "price",
+      "prompt": "Extract ALL prices and their associated products shown in the image. For each price found:\n\n1. Identify the product name and translate it to English\n2. Note the original price and currency\n3. Convert to Euros using current exchange rates\n\nFormat your response as a list:\n[English product name] |  [amount currency] | €[converted amount] ::\n\nImportant: Always translate product names to English, regardless of the original language in the image. If multiple prices are shown, list each one separately. Provide only the structured data with no additional commentary."
+    }
+  ]
+}

@@ -8,11 +8,6 @@
 </head>
 <body>
     <header>
-        <div class="menu-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-            </svg>
-        </div>
         <div class="logo"></div>
         <div class="header-icons">
             <div class="user-icon" id="userIcon" title="API Settings">
@@ -106,7 +101,9 @@
                 <input type="text" class="modal-input" id="promptName" placeholder="Agent name (e.g., Code Helper)" />
                 <textarea class="modal-textarea" id="promptText" placeholder="System prompt instructions..." rows="6"></textarea>
                 <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-save" id="addPromptBtn">Add Prompt</button>
+                    <button class="modal-btn modal-btn-save" id="addPromptBtn">Add</button>
+                    <button class="modal-btn modal-btn-secondary" id="savePromptsBtn">Save All</button>
+                    <button class="modal-btn modal-btn-secondary" id="loadPromptsBtn">Load</button>
                     <button class="modal-btn modal-btn-cancel" id="closePromptsBtn">Close</button>
                 </div>
             </div>
@@ -116,6 +113,7 @@
     <!-- API Status Indicator -->
     <div class="api-status" id="apiStatus">No API key</div>
     
+    <script src="src/promptSaver.js"></script>
     <script src="src/app.js"></script>
 </body>
 </html>

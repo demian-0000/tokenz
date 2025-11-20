@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Prompt Save/Load</title>
+</head>
+<body>
+    <h1>Prompt Save/Load Test</h1>
+    
+    <button id="testSave">Test Save</button>
+    <button id="testLoad">Test Load</button>
+    <div id="result"></div>
+
+    <script src="src/promptSaver.js"></script>
+    <script>
+        const testPrompts = [
+            { name: 'Test Helper', prompt: 'You are helpful' },
+            { name: 'Test Writer', prompt: 'You are creative' }
+        ];
+
+        document.getElementById('testSave').onclick = function() {
+            try {
+                PromptSaver.saveToFile(testPrompts, 'test_prompts.json');
+                document.getElementById('result').textContent = 'Save initiated - check your downloads';
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        };
+
+        document.getElementById('testLoad').onclick = async function() {
+            try {
+                const loaded = await PromptSaver.loadFromFile();
+                document.getElementById('result').textContent = 'Loaded ' + loaded.length + ' prompts: ' + JSON.stringify(loaded, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        };
+    </script>
+</body>
+</html>
