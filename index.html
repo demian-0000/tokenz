@@ -739,9 +739,42 @@
             'whisper-large-v3-turbo'
         ];
 
+        // Vision-capable models
+        const VISION_MODELS = [
+            'meta-llama/llama-4-maverick-17b-128e-instruct',
+            'meta-llama/llama-4-scout-17b-16e-instruct'
+        ];
+
+        // Function to check if model supports vision
+        function isVisionModel(modelId) {
+            return VISION_MODELS.includes(modelId);
+        }
+
         // Function to get display name (remove prefix)
         function getModelDisplayName(modelId) {
             return modelId.replace(/^(meta-llama|groq|moonshotai|openai|qwen)\//, '');
+        }
+
+        // Function to check if conversation has vision messages
+        function hasVisionMessages() {
+            return conversationHistory.some(msg => 
+                msg.role === 'user' && Array.isArray(msg.content)
+            );
+        }
+
+        // Function to convert vision messages to text-only
+        function sanitizeMessagesForTextModel(messages) {
+            return messages.map(msg => {
+                if (msg.role === 'user' && Array.isArray(msg.content)) {
+                    // Extract only text from vision message
+                    const textPart = msg.content.find(part => part.type === 'text');
+                    return {
+                        role: msg.role,
+                        content: textPart ? textPart.text : 'Image was sent'
+                    };
+                }
+                return msg;
+            });
         }
 
         // Fetch available models from Groq API
@@ -864,7 +897,18 @@
         
         dropdown.onclick = function(e) {
             if (e.target.classList.contains('model-item')) {
-                currentModel = e.target.getAttribute('data-id');
+                const newModel = e.target.getAttribute('data-id');
+                
+                // Check if switching between vision and text-only models
+                const wasVisionModel = isVisionModel(currentModel);
+                const isNewVisionModel = isVisionModel(newModel);
+                
+                // Auto-clear conversation when switching between vision and text-only models
+                if (wasVisionModel !== isNewVisionModel && conversationHistory.length > 0) {
+                    clearChat();
+                }
+                
+                currentModel = newModel;
                 updateModelTag();
                 dropdown.classList.remove('show');
             }
@@ -1124,10 +1168,10 @@
                 reader.onload = (e) => {
                     const img = new Image();
                     img.onload = () => {
-                        // Calculate new dimensions (max 700px on largest side)
+                        // Calculate new dimensions (max 768px on largest side)
                         let width = img.width;
                         let height = img.height;
-                        const maxDimension = 700;
+                        const maxDimension = 768;
 
                         if (width > height) {
                             if (width > maxDimension) {
@@ -1148,7 +1192,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // Convert to JPEG with 30% quality (0.3)
+                        // Convert to JPEG with 40% quality (0.4)
                         canvas.toBlob(
                             (blob) => {
                                 const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
@@ -1156,11 +1200,11 @@
                                 });
                                 resolve({
                                     file: compressedFile,
-                                    dataUrl: canvas.toDataURL('image/jpeg', 0.3)
+                                    dataUrl: canvas.toDataURL('image/jpeg', 0.4)
                                 });
                             },
                             'image/jpeg',
-                            0.3
+                            0.4
                         );
                     };
                     img.onerror = reject;
@@ -1259,8 +1303,16 @@
                 });
             }
             
-            // Add all conversation history (including the new message we just added)
-            messagesToSend = messagesToSend.concat(conversationHistory);
+            // Add conversation history
+            let historyToSend = conversationHistory;
+            
+            // If using text-only model but history has vision messages, sanitize them
+            if (!isVisionModel(currentModel) && hasVisionMessages()) {
+                console.warn('Text-only model detected with vision messages in history. Sanitizing...');
+                historyToSend = sanitizeMessagesForTextModel(conversationHistory);
+            }
+            
+            messagesToSend = messagesToSend.concat(historyToSend);
             
             // Validate messages before sending
             console.log('Messages to send:', messagesToSend.map(m => ({
