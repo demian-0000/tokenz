@@ -707,6 +707,19 @@ async function sendMessage() {
         return;
     }
 
+    // Quick check for vision-only models without images
+    const VISION_ONLY_MODELS = [
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'meta-llama/llama-4-maverick-17b-128e-instruct'
+    ];
+    
+    if (VISION_ONLY_MODELS.includes(currentModel) && !currentImage) {
+        addMessage(message, 'user');
+        addMessage('I only do images, dude...', 'assistant');
+        messageInput.value = '';
+        return;
+    }
+
     // Check rates in background (non-blocking) - uses cached rates immediately
     checkAndRefreshRates();
 
