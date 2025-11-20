@@ -798,6 +798,8 @@ async function sendMessage() {
             messages: messagesToSend
         });
 
+        const startTime = performance.now();
+
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -820,10 +822,16 @@ async function sendMessage() {
         }
 
         const data = await response.json();
+        const responseTime = ((performance.now() - startTime) / 1000).toFixed(2);
         const assistantMessage = data.choices[0]?.message?.content || 'No response';
         
         conversationHistory.push({ role: 'assistant', content: assistantMessage });
         addMessage(assistantMessage, 'assistant');
+
+        // Update status with model name and response time
+        const statusEl = document.getElementById('apiStatus');
+        statusEl.textContent = `${getModelDisplayName(currentModel)}: ${responseTime}s`;
+        statusEl.className = 'api-status connected';
 
     } catch (error) {
         removeLoadingMessage();
