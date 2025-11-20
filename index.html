@@ -604,6 +604,157 @@
         .api-status.error {
             color: #ff3b30;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            main {
+                top: 60px;
+                bottom: calc(80px + 180px);
+                padding: 20px 15px;
+            }
+
+            .input-container {
+                bottom: 80px;
+                width: calc(100% - 20px);
+                padding: 15px 18px;
+                border-radius: 20px;
+            }
+
+            .input-field {
+                font-size: 16px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 15px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 24px;
+            }
+
+            .prompts-modal-content {
+                max-height: 70vh;
+            }
+
+            .bottom-bar {
+                flex-wrap: nowrap;
+                justify-content: space-between;
+                width: 100%;
+                gap: 8px;
+            }
+
+            .bottom-bar-left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .bottom-bar-right {
+                flex-shrink: 0;
+            }
+
+            .model-selector, .agents-selector {
+                font-size: 12px;
+                padding: 5px 12px;
+                white-space: nowrap;
+            }
+
+            .model-selector {
+                flex: 1;
+                min-width: 100px;
+                max-width: none;
+            }
+
+            .model-selector span {
+                display: inline-block;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .api-status {
+                bottom: 10px;
+                right: 10px;
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 28px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .input-container {
+                padding: 12px 15px;
+            }
+
+            .send-button {
+                width: 32px;
+                height: 32px;
+            }
+
+            .message {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            .message-image {
+                max-width: 120px;
+                max-height: 120px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .modal-title {
+                font-size: 18px;
+            }
+
+            .bottom-bar {
+                gap: 6px;
+            }
+
+            .bottom-bar-left {
+                gap: 6px;
+            }
+
+            .model-selector, .agents-selector {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+
+            .model-selector span {
+                max-width: 120px;
+            }
+
+            .plus-button {
+                width: 18px;
+                height: 18px;
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -911,6 +1062,7 @@
         };
         
         dropdown.onclick = function(e) {
+            e.stopPropagation();
             if (e.target.classList.contains('model-item')) {
                 const newModel = e.target.getAttribute('data-id');
                 
