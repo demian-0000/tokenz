@@ -599,98 +599,12 @@ imageInput.addEventListener('change', async (e) => {
 // Remove image
 removeImageBtn.addEventListener('click', clearImage);
 
-// Currency rates cache with 12-hour persistence
-const RATES_CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
-const RATES_STORAGE_KEY = 'currencyRatesCache';
-let currencyRates = null;
+// Currency conversion is now handled by currencyConverter.js
+// Initialize currency converter on page load
+currencyConverter.initialize();
 
-// Load cached rates from localStorage
-function loadCachedRates() {
-    try {
-        const cached = localStorage.getItem(RATES_STORAGE_KEY);
-        if (cached) {
-            const data = JSON.parse(cached);
-            const age = Date.now() - data.timestamp;
-            
-            if (age < RATES_CACHE_DURATION) {
-                currencyRates = data;
-                console.log('Loaded cached currency rates:', Object.keys(data.rates).length, 'currencies', 
-                            `(${Math.round(age / 1000 / 60)} minutes old)`);
-                return true;
-            } else {
-                console.log('Cached rates expired, will fetch fresh data');
-            }
-        }
-    } catch (error) {
-        console.error('Error loading cached rates:', error);
-    }
-    return false;
-}
-
-// Fetch comprehensive currency rates
-async function fetchAllCurrencyRates() {
-    try {
-        const response = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
-        
-        if (!response.ok) throw new Error('Failed to fetch rates');
-        const data = await response.json();
-        
-        currencyRates = {
-            base: 'EUR',
-            rates: data.rates,
-            lastUpdate: new Date().toISOString(),
-            timestamp: Date.now()
-        };
-        
-        // Save to localStorage for persistence
-        localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(currencyRates));
-        
-        console.log('Currency rates fetched and cached:', Object.keys(data.rates).length, 'currencies');
-        return true;
-    } catch (error) {
-        console.error('Failed to fetch currency rates:', error);
-        return false;
-    }
-}
-
-// Get formatted rates string for LLM
-function getFormattedRatesForLLM() {
-    if (!currencyRates) return '';
-    
-    const majorCurrencies = ['USD', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'MXN', 'BRL'];
-    const age = Math.round((Date.now() - currencyRates.timestamp) / 1000 / 60);
-    let ratesText = `\n\n=== LIVE EXCHANGE RATES (Base: EUR) ===\n`;
-    ratesText += `Last updated: ${new Date(currencyRates.timestamp).toLocaleString()} (${age} min ago)\n\n`;
-    
-    majorCurrencies.forEach(currency => {
-        if (currencyRates.rates[currency]) {
-            ratesText += `1 EUR = ${currencyRates.rates[currency].toFixed(4)} ${currency}\n`;
-        }
-    });
-    
-    ratesText += `\nAll ${Object.keys(currencyRates.rates).length} currencies available. Use these live rates for accurate conversions.\n`;
-    ratesText += `===================================\n`;
-    
-    return ratesText;
-}
-
-// Check if rates need refresh (non-blocking)
-function checkAndRefreshRates() {
-    if (!currencyRates || (Date.now() - currencyRates.timestamp > RATES_CACHE_DURATION)) {
-        // Fetch in background without blocking
-        fetchAllCurrencyRates().catch(err => 
-            console.error('Background rate refresh failed:', err)
-        );
-    }
-}
-
-// Initialize rates on page load (try cache first, then fetch if needed)
-if (!loadCachedRates()) {
-    fetchAllCurrencyRates();
-}
-
-// Check for refresh every hour (but only fetch if cache expired)
-setInterval(checkAndRefreshRates, 60 * 60 * 1000);
+// Check for refresh every hour
+setInterval(() => currencyConverter.checkAndRefresh(), 60 * 60 * 1000);
 
 async function sendMessage() {
     const message = messageInput.value.trim();
@@ -720,8 +634,8 @@ async function sendMessage() {
         return;
     }
 
-    // Check rates in background (non-blocking) - uses cached rates immediately
-    checkAndRefreshRates();
+    // Check rates in background (non-blocking)
+    currencyConverter.checkAndRefresh();
 
     // Build message content
     let userMessage;
@@ -761,13 +675,29 @@ async function sendMessage() {
     // Build messages array with system prompt if agent is selected
     let messagesToSend = [];
     
+    // Check if using price agent for optimizations
+    const isPriceAgent = currentAgent?.toLowerCase().includes('price');
+    
     // Always add system prompt at the start if agent is selected
     if (currentAgentPrompt) {
-        // Add live currency rates to system prompt
+        // Simplified prompt for JS-based conversion
         let systemPrompt = String(currentAgentPrompt);
-        if (currencyRates) {
-            systemPrompt += getFormattedRatesForLLM();
-        }
+        
+        // Replace conversion instruction with simpler extraction-only instruction
+        systemPrompt = systemPrompt.replace(
+            /Convert to Euros using current exchange rates/gi,
+            'Extract the price and currency code'
+        );
+        systemPrompt = systemPrompt.replace(
+            /€\[converted amount\]/gi,
+            '[CURRENCY_CODE]'
+        );
+        
+        // Remove any confusing "don't convert" language - just state what to do
+        systemPrompt = systemPrompt.replace(
+            /DO NOT convert to Euros[^.]*\./gi,
+            ''
+        );
         
         messagesToSend.push({
             role: 'system',
@@ -822,8 +752,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 model: currentModel,
                 messages: messagesToSend,
-                temperature: 0.7,
-                max_tokens: 1024
+                temperature: isPriceAgent ? 0.1 : 0.7,  // Lower temp for deterministic extraction
+                max_tokens: isPriceAgent ? 512 : 1024   // Fewer tokens needed for price lists
             })
         });
 
@@ -836,14 +766,28 @@ async function sendMessage() {
 
         const data = await response.json();
         const responseTime = ((performance.now() - startTime) / 1000).toFixed(2);
-        const assistantMessage = data.choices[0]?.message?.content || 'No response';
+        let assistantMessage = data.choices[0]?.message?.content || 'No response';
+        
+        // Process currency conversions if using price agent
+        console.log('Current agent:', currentAgent);
+        console.log('Is price agent?', currentAgent && currentAgent.toLowerCase().includes('price'));
+        console.log('Raw LLM response:', assistantMessage);
+        
+        if (currentAgent && currentAgent.toLowerCase().includes('price')) {
+            console.log('Processing currency conversion...');
+            assistantMessage = currencyConverter.processLLMResponse(assistantMessage);
+            console.log('After conversion:', assistantMessage);
+        }
         
         conversationHistory.push({ role: 'assistant', content: assistantMessage });
         addMessage(assistantMessage, 'assistant');
 
-        // Update status with model name and response time
+        // Update status with model name, response time, and currency info
         const statusEl = document.getElementById('apiStatus');
-        statusEl.textContent = `${getModelDisplayName(currentModel)}: ${responseTime}s`;
+        const currencyInfo = currencyConverter.getRatesInfo();
+        
+        // Build HTML with colored time (blue)
+        statusEl.innerHTML = `${getModelDisplayName(currentModel)}: <span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo}`;
         statusEl.className = 'api-status connected';
 
     } catch (error) {
