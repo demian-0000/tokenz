@@ -193,6 +193,20 @@ class CurrencyConverter {
       // Trim the line first
       const trimmedLine = line.trim();
       
+      // Check if already converted (has € symbol)
+      if (trimmedLine.includes('€')) {
+        console.log(`Already converted: "${trimmedLine}"`);
+        return line;
+      }
+      
+      // Check if it has a number after pipe but no currency code (e.g., "Product | 149 ::")
+      // This might happen if LLM forgot to include currency
+      const noCurrencyMatch = trimmedLine.match(/^(.+?)\|\s*(\d+(?:\.\d+)?)\s*(?:\([^)]+\))?\s*::$/);
+      if (noCurrencyMatch && !/[A-Za-z]{3,6}/.test(noCurrencyMatch[0])) {
+        console.warn(`⚠️ No currency code found in: "${trimmedLine}" - Cannot convert without currency`);
+        return line + ' [⚠️ Missing currency code - cannot convert]';
+      }
+      
       // Try multiple patterns to be flexible
       // Pattern 1: "Product | 1650 JPY ::" or "Product | 1650 Yen ::"
       // Pattern 2: "Product | 1650 JPY | JPY ::"
@@ -238,11 +252,14 @@ class CurrencyConverter {
       }
     });
 
-    let processedResponse = processedLines.join('\n');
+    // Filter out empty lines, remove trailing "::" from each line, then join with " :: "
+    const nonEmptyLines = processedLines
+      .filter(line => line.trim().length > 0)
+      .map(line => line.trim().replace(/\s*::\s*$/, '')); // Remove trailing ::
+    
+    let processedResponse = nonEmptyLines.join(' :: ');
 
-    // Add conversion info footer
-    const age = Math.round((Date.now() - this.timestamp) / 1000 / 60);
-    processedResponse += `\n\n[EUR conversions calculated using live rates from ${age} min ago]`;
+    // No footer message - rate age is shown in api-status
 
     return processedResponse;
   }
