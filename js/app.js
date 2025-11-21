@@ -709,8 +709,11 @@ async function sendMessage() {
         return;
     }
 
-    // Check rates in background (non-blocking)
-    currencyConverter.checkAndRefresh();
+    // Only check rates if using price agent
+    const isPriceAgent = currentAgent?.toLowerCase().includes('price');
+    if (isPriceAgent) {
+        currencyConverter.checkAndRefresh();
+    }
 
     // Build message content
     let userMessage;
@@ -749,9 +752,6 @@ async function sendMessage() {
 
     // Build messages array with system prompt if agent is selected
     let messagesToSend = [];
-    
-    // Check if using price agent for optimizations
-    const isPriceAgent = currentAgent?.toLowerCase().includes('price');
     
     // Always add system prompt at the start if agent is selected
     if (currentAgentPrompt) {
@@ -824,6 +824,12 @@ async function sendMessage() {
         const responseTime = ((performance.now() - startTime) / 1000).toFixed(2);
         let assistantMessage = data.choices[0]?.message?.content || 'No response';
         
+        // Extract token usage from response
+        const usage = data.usage || {};
+        const promptTokens = usage.prompt_tokens || 0;
+        const completionTokens = usage.completion_tokens || 0;
+        const totalTokens = usage.total_tokens || 0;
+        
         // Process currency conversions if using price agent
         console.log('Current agent:', currentAgent);
         console.log('Is price agent?', currentAgent && currentAgent.toLowerCase().includes('price'));
@@ -838,12 +844,11 @@ async function sendMessage() {
         conversationHistory.push({ role: 'assistant', content: assistantMessage });
         addMessage(assistantMessage, 'assistant');
 
-        // Update status with response time and currency info
+        // Update status with response time and token usage
         const statusEl = document.getElementById('apiStatus');
-        const currencyInfo = currencyConverter.getRatesInfo();
         
-        // Build HTML with colored time (blue)
-        statusEl.innerHTML = `<span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo} | <span style="color: #2196f3;">v${getVersion()}</span>`;
+        // Build HTML with colored time and token info
+        statusEl.innerHTML = `<span style="color: #2196f3;">${responseTime}s</span> | ${totalTokens} tokens (${promptTokens}→${completionTokens}) | <span style="color: #2196f3;">v${getVersion()}</span>`;
         statusEl.className = 'api-status connected';
 
     } catch (error) {

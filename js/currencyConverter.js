@@ -184,6 +184,12 @@ class CurrencyConverter {
       return llmResponse + '\n\n[⚠️ Currency conversion unavailable - rates not loaded. Please refresh the page.]';
     }
 
+    // Quick check: if no currency patterns found, return as-is (optimization)
+    if (!/\d+(?:\.\d+)?\s+[A-Za-z]{3,6}/.test(llmResponse)) {
+      console.log('No currency patterns detected, skipping conversion');
+      return llmResponse;
+    }
+
     console.log('Processing LLM response:', llmResponse);
     console.log('Available rates:', this.rates ? Object.keys(this.rates).length : 0);
 
