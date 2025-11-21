@@ -3,6 +3,11 @@ let apiKey = localStorage.getItem('groqApiKey') || '';
 let models = [];
 let currentModel = localStorage.getItem('lastUsedModel') || '';
 
+// Get version from HTML data attribute
+function getVersion() {
+    return document.body.dataset.version || '3.1';
+}
+
 // Allowed models list (in display order)
 const ALLOWED_MODELS = [
     'meta-llama/llama-4-maverick-17b-128e-instruct',
@@ -101,7 +106,7 @@ async function loadModels() {
             currentModel = models[0];
         }
         updateModelTag();
-        statusEl.textContent = `${models.length} models available`;
+        statusEl.innerHTML = `${models.length} models available | <span style="color: #2196f3;">v${getVersion()}</span>`;
         statusEl.className = 'api-status connected';
     } catch (err) {
         console.error('Error loading models:', err);
@@ -838,7 +843,7 @@ async function sendMessage() {
         const currencyInfo = currencyConverter.getRatesInfo();
         
         // Build HTML with colored time (blue)
-        statusEl.innerHTML = `<span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo}`;
+        statusEl.innerHTML = `<span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo} | <span style="color: #2196f3;">v${getVersion()}</span>`;
         statusEl.className = 'api-status connected';
 
     } catch (error) {
