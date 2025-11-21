@@ -664,7 +664,8 @@ h1 {
 .api-status {
     position: fixed;
     bottom: 50px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(calc(380px - 100%));
     padding: 8px 16px;
     background: #ffffff;
     border-radius: 20px;
@@ -840,7 +841,9 @@ h1 {
 
     .api-status {
         bottom: 40px;
+        left: auto;
         right: 10px;
+        transform: none;
         font-size: 11px;
         padding: 6px 12px;
     }
