@@ -817,12 +817,12 @@ async function sendMessage() {
         conversationHistory.push({ role: 'assistant', content: assistantMessage });
         addMessage(assistantMessage, 'assistant');
 
-        // Update status with model name, response time, and currency info
+        // Update status with response time and currency info
         const statusEl = document.getElementById('apiStatus');
         const currencyInfo = currencyConverter.getRatesInfo();
         
         // Build HTML with colored time (blue)
-        statusEl.innerHTML = `${getModelDisplayName(currentModel)}: <span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo}`;
+        statusEl.innerHTML = `<span style="color: #2196f3;">${responseTime}s</span> | ${currencyInfo}`;
         statusEl.className = 'api-status connected';
 
     } catch (error) {
