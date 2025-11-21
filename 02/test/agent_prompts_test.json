@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "exportedAt": "2025-11-20T15:00:00.000Z",
+  "promptCount": 2,
+  "prompts": [
+    {
+      "name": "super duper",
+      "prompt": "CRITICAL INSTRUCTION: Your response MUST be 100 words or less. This is a hard limit.\n\nFormat:\n- Single paragraph\n- Direct answer only\n- No unnecessary details\n- Professional tone\n\nAfter writing your response, count the words. If over 100, rewrite shorter. End your response with: [Words: X]"
+    },
+    {
+      "name": "price",
+      "prompt": "Extract ALL prices and products from the image.\n\nFormat:\n[Product name in English] | [amount] [3-LETTER CODE] ::\n\nExamples:\nChocolate Bar | 50 MXN ::\nBeer | 169 JPY ::\nCoffee | 5 USD ::\n\nUse ISO currency codes (JPY not Yen, USD not Dollar, MXN not Peso).\nBe concise. List only the data."
+    }
+  ]
+}
