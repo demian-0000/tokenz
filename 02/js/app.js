@@ -256,12 +256,23 @@ const closePromptsBtn = document.getElementById('closePromptsBtn');
 const addPromptBtn = document.getElementById('addPromptBtn');
 const promptName = document.getElementById('promptName');
 const promptText = document.getElementById('promptText');
+const promptModel = document.getElementById('promptModel');
 const promptsList = document.getElementById('promptsList');
 let editingIndex = null;
+
+// Populate model dropdown in prompts modal
+function populateModelDropdown() {
+    const options = ['<option value="">No preferred model (manual selection)</option>'];
+    models.forEach(modelId => {
+        options.push(`<option value="${modelId}">${getModelDisplayName(modelId)}</option>`);
+    });
+    promptModel.innerHTML = options.join('');
+}
 
 promptsIcon.onclick = function() {
     promptsModal.classList.add('show');
     renderPromptsList();
+    populateModelDropdown();
 };
 
 closePromptsBtn.onclick = function() {
@@ -272,6 +283,7 @@ closePromptsBtn.onclick = function() {
 function clearPromptForm() {
     promptName.value = '';
     promptText.value = '';
+    promptModel.value = '';
     editingIndex = null;
     addPromptBtn.textContent = 'Add';
 }
@@ -279,20 +291,26 @@ function clearPromptForm() {
 addPromptBtn.onclick = function() {
     const name = promptName.value.trim();
     const prompt = promptText.value.trim();
+    const preferredModel = promptModel.value;
     
     if (!name || !prompt) {
         alert('Please fill in both name and prompt fields');
         return;
     }
 
+    const promptData = { name, prompt };
+    if (preferredModel) {
+        promptData.preferredModel = preferredModel;
+    }
+
     if (editingIndex !== null) {
         // Update existing prompt
-        agentPrompts[editingIndex] = { name, prompt };
+        agentPrompts[editingIndex] = promptData;
         editingIndex = null;
         addPromptBtn.textContent = 'Add';
     } else {
         // Add new prompt
-        agentPrompts.push({ name, prompt });
+        agentPrompts.push(promptData);
     }
 
     savePrompts();
@@ -308,6 +326,7 @@ promptsList.addEventListener('click', function(e) {
         const prompt = agentPrompts[index];
         promptName.value = prompt.name;
         promptText.value = prompt.prompt;
+        promptModel.value = prompt.preferredModel || '';
         editingIndex = parseInt(index);
         addPromptBtn.textContent = 'Update';
     } else if (e.target.classList.contains('prompt-item-btn-delete')) {
@@ -390,6 +409,15 @@ function updateAgentsDropdown() {
     return agentNames;
 }
 
+// Get preferred model display for agent
+function getAgentModelInfo(agentName) {
+    const agent = agentPrompts.find(p => p.name === agentName);
+    if (agent && agent.preferredModel) {
+        return ` → ${getModelDisplayName(agent.preferredModel)}`;
+    }
+    return '';
+}
+
 agentsSelector.onclick = function(e) {
     e.stopPropagation();
     // Close model dropdown if open
@@ -399,7 +427,10 @@ agentsSelector.onclick = function(e) {
     agentsDropdown.classList.toggle('show');
     agentsDropdown.innerHTML = agentNames.map(name => {
         const isActive = currentAgent === name;
-        return `<div class="agent-item ${isActive ? 'active' : ''}" data-agent="${name}">${name}</div>`;
+        const modelInfo = getAgentModelInfo(name);
+        return `<div class="agent-item ${isActive ? 'active' : ''}" data-agent="${name}">
+            ${name}<span class="agent-model-hint">${modelInfo}</span>
+        </div>`;
     }).join('');
 };
 
@@ -417,6 +448,29 @@ agentsDropdown.onclick = function(e) {
         localStorage.setItem('lastUsedAgent', currentAgent);
         const agentData = agentPrompts.find(p => p.name === agentName);
         currentAgentPrompt = agentData ? agentData.prompt : null;
+        
+        // Auto-select preferred model if specified (soft preference)
+        if (agentData && agentData.preferredModel) {
+            const preferredModel = agentData.preferredModel;
+            // Only switch if the preferred model is available
+            if (models.includes(preferredModel)) {
+                currentModel = preferredModel;
+                localStorage.setItem('lastUsedModel', currentModel);
+                updateModelTag();
+                
+                // Show brief notification
+                const statusEl = document.getElementById('apiStatus');
+                const originalText = statusEl.innerHTML;
+                const originalClass = statusEl.className;
+                statusEl.innerHTML = `Switched to ${getModelDisplayName(preferredModel)}`;
+                statusEl.className = 'api-status connected';
+                setTimeout(() => {
+                    statusEl.innerHTML = originalText;
+                    statusEl.className = originalClass;
+                }, 2000);
+            }
+        }
+        
         agentsDropdown.classList.remove('show');
         
         // Update the agents selector text to show selected agent

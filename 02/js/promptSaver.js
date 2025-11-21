@@ -59,6 +59,7 @@ class PromptSaver {
             if (!prompt.name || !prompt.prompt) {
               throw new Error('Invalid prompt structure: missing name or prompt field');
             }
+            // preferredModel is optional, no validation needed
           }
 
           resolve(data.prompts);

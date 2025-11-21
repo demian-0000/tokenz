@@ -3,6 +3,27 @@
 ## Description
 This version uses **JavaScript-based currency conversion** where the LLM only extracts prices and currency codes, then JavaScript performs precise mathematical conversions.
 
+## 🆕 New Feature: Soft Model Preference
+
+Agents can now have a **preferred LLM model** that auto-selects when you choose the agent. This simplifies the workflow from two steps (select model + select agent) to one step (select agent).
+
+### How It Works:
+1. **Create/Edit Agent**: In the prompts modal, select a preferred model for each agent from the dropdown
+2. **Auto-Switch**: When you select an agent, it automatically switches to the preferred model (if available)
+3. **Manual Override**: You can still manually change the model after selection - it's a soft preference, not a hard requirement
+4. **Visual Hints**: Agent dropdown shows which model is associated with each agent (e.g., "price → llama-4-maverick")
+5. **Notification**: A brief status message confirms the model switch
+
+### Example:
+- "price" agent → auto-selects "llama-4-maverick" (vision model for image analysis)
+- "super duper" agent → auto-selects "llama-3.3-70b-versatile" (text model)
+
+### Benefits:
+- ✅ Eliminates errors from forgetting to select the right model
+- ✅ Faster workflow (one click instead of two)
+- ✅ Clear intent (each agent optimized for specific model)
+- ✅ Still flexible (manual override available)
+
 ## Project Structure
 ```
 02/
