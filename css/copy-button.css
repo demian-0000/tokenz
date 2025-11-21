@@ -1,0 +1,62 @@
+/* Copy button styles */
+.message.assistant {
+    position: relative;
+    padding-top: 40px !important;
+}
+
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.3;
+    transition: opacity 0.2s, background 0.2s;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.copy-button:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 1);
+}
+
+.copy-button:active {
+    transform: scale(0.95);
+}
+
+.copy-button svg {
+    width: 16px;
+    height: 16px;
+    color: #666;
+}
+
+.copy-button.copied {
+    opacity: 1;
+    background: #34c759;
+}
+
+.copy-button.copied svg {
+    color: white;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .copy-button {
+        width: 32px;
+        height: 32px;
+        opacity: 0.5;
+    }
+    
+    .copy-button svg {
+        width: 18px;
+        height: 18px;
+    }
+}

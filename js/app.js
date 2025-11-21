@@ -551,6 +551,12 @@ function addMessage(content, role, imageUrl = null) {
     }
     
     chatMessages.appendChild(messageDiv);
+    
+    // Add copy button to assistant messages
+    if (role === 'assistant' && typeof CopyButton !== 'undefined') {
+        CopyButton.addToMessage(messageDiv);
+    }
+    
     chatMessages.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
