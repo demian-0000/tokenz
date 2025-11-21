@@ -1,3 +1,5 @@
 Backup/
 node_modules/
 .DS_Store
+.gitattributes
+.vscode/
