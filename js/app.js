@@ -172,7 +172,7 @@ apiKeyInput.oninput = function() {
     }
 };
 
-apiKeyInput.onkeypress = function(e) {
+apiKeyInput.onkeydown = function(e) {
     if (e.key === 'Enter') {
         saveBtn.click();
     }
@@ -532,7 +532,23 @@ function addMessage(content, role, imageUrl = null) {
         
         messageDiv.appendChild(contentDiv);
     } else {
-        messageDiv.textContent = content;
+        // Check if content contains ASCII box art (lines with +---+ or |)
+        const hasBoxArt = /^[+\-|]+$|^\|.*\|$/m.test(content);
+        
+        if (hasBoxArt) {
+            // Use <pre> for monospace formatting
+            const pre = document.createElement('pre');
+            pre.textContent = content;
+            pre.style.margin = '0';
+            pre.style.fontFamily = 'Monaco, Menlo, Consolas, "Courier New", monospace';
+            pre.style.fontSize = '13px';
+            pre.style.lineHeight = '1.4';
+            pre.style.whiteSpace = 'pre';
+            pre.style.overflowX = 'auto';
+            messageDiv.appendChild(pre);
+        } else {
+            messageDiv.textContent = content;
+        }
     }
     
     chatMessages.appendChild(messageDiv);
