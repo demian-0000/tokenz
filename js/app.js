@@ -544,12 +544,6 @@ function addMessage(content, role, imageUrl = null) {
             // Use <pre> for monospace formatting
             const pre = document.createElement('pre');
             pre.textContent = content;
-            pre.style.margin = '0';
-            pre.style.fontFamily = 'Monaco, Menlo, Consolas, "Courier New", monospace';
-            pre.style.fontSize = '13px';
-            pre.style.lineHeight = '1.4';
-            pre.style.whiteSpace = 'pre';
-            pre.style.overflowX = 'auto';
             messageDiv.appendChild(pre);
         } else {
             messageDiv.textContent = content;
