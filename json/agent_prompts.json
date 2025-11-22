@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "exportedAt": "2025-11-21T14:02:39.488Z",
+  "exportedAt": "2025-11-21T17:49:31.012Z",
   "promptCount": 4,
   "prompts": [
     {
@@ -19,8 +19,8 @@
       "preferredModel": "meta-llama/llama-4-scout-17b-16e-instruct"
     },
     {
-      "name": "Img",
-      "prompt": "Analyze the image and create a caption (up to 120 words, maximum 2 paragraphs):\n\nINCLUDE (prioritize most prominent/visible):\n- Identify specific subjects: landscapes, products, food, architecture, vehicles, electronics, cities\n- State precise location (city, landmark, country) when applicable\n- **Brand names and model numbers when clearly visible**\n- **If many brands present, focus on the 5-10 most prominent ones**\n- Read visible signs, station names, airport signage, directional information\n- Identify company names, airline logos, corporate branding\n- Use OCR for brand names, product labels, signs, text displays\n- Use visual analysis (shape, color, context) for common products\n- Describe spatial relationships and key elements\n- For packaged products: identify through logos/text/shape; use generic descriptions if obscured\n\nEXCLUDE:\n- Color/texture descriptions\n- Photography terminology\n- Historical/cultural context\n- Time/season/weather details\n- Inferred actions/events/origins\n- Subjective/emotional language\n\nUse objective, factual language. Describe ONLY what is directly visible. When many brands are present, prioritize the most prominent or central ones.\n\nOutput only the caption text.",
+      "name": "Caption",
+      "prompt": "Generate a caption following these guidelines:\n\n### Style and Tone\n- Write 2-3 sentences in natural, conversational language\n- Avoid formal phrases like \"The image depicts\" or \"is visible\"\n- Use simple, direct descriptions: \"A table holds...\" not \"A table is seen holding...\"\n\n### Content Approach\n- Identify the PRIMARY subject and setting first (what/where)\n- Recognize brands, logos, and text when clearly visible (e.g., \"Asahi beer cans\" not \"cans with Japanese text\")\n- Make reasonable inferences about common objects (e.g., \"Raspberry Pi circuit board\" not just \"circuit board\")\n- Group similar items together rather than listing positions (\"beer cans, coins, and cables\" not \"four cans in top-right, three coins below\")\n- Describe the overall scene's character or purpose (\"cluttered with daily essentials\" vs itemizing each object)\n\n### What to Include\n- Location context from metadata (apartment, home, specific venue)\n- Notable brands or identifiable items\n- General atmosphere or scene type (cluttered, organized, casual, etc.)\n\n### What to Avoid\n- Precise spatial descriptions (\"top-left corner\", \"below the\", \"to its right\")\n- Exhaustive item-by-item inventories\n- Describing every visible detail\n- Technical photography terms\n- Overly formal or academic language\n\n### Example Format\n\"A [surface/location] in [setting] holds [grouped items], including [notable/branded items]. The [surface/scene] appears [character/atmosphere].\"",
       "preferredModel": "meta-llama/llama-4-maverick-17b-128e-instruct"
     }
   ]

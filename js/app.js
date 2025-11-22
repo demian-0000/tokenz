@@ -41,6 +41,34 @@ function getModelDisplayName(modelId) {
     return modelId.replace(/^(meta-llama|groq|moonshotai|openai|qwen)\//, '');
 }
 
+// Function to get short display name for mobile
+function getShortModelName(modelId) {
+    const shortNames = {
+        'meta-llama/llama-4-maverick-17b-128e-instruct': 'maverick',
+        'llama-3.1-8b-instant': 'llama-3.1-8b',
+        'moonshotai/kimi-k2-instruct-0905': 'kimi-k2',
+        'groq/compound': 'compound',
+        'groq/compound-mini': 'compound-mini',
+        'llama-3.3-70b-versatile': 'llama-3.3-70b',
+        'meta-llama/llama-4-scout-17b-16e-instruct': 'scout',
+        'openai/gpt-oss-120b': 'gpt-oss-120b',
+        'openai/gpt-oss-20b': 'gpt-oss-20b',
+        'playai-tts': 'playai-tts',
+        'qwen/qwen3-32b': 'qwen3-32b',
+        'whisper-large-v3': 'whisper-v3',
+        'whisper-large-v3-turbo': 'whisper-v3-turbo'
+    };
+    
+    // Check if we're on mobile
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile && shortNames[modelId]) {
+        return shortNames[modelId];
+    }
+    
+    return getModelDisplayName(modelId);
+}
+
 // Function to check if conversation has vision messages
 function hasVisionMessages() {
     return conversationHistory.some(msg => 
@@ -121,7 +149,7 @@ async function loadModels() {
 function updateModelTag() {
     const modelTagEl = document.getElementById('modelTag');
     if (currentModel) {
-        modelTagEl.textContent = getModelDisplayName(currentModel);
+        modelTagEl.textContent = getShortModelName(currentModel);
     }
 }
 
